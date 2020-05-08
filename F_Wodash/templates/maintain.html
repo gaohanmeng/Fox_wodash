@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %} WO Maintain {% endblock %}
+
+{% block head %}
+<style type="text/css">
+    table#mainTable {
+    border-collapse:collapse;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    }
+    #mainTable th {
+    background-color:blueviolet;
+    color:white;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    text-align:center;
+    }
+    #mainTable td {
+    background-color:aliceblue;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    text-align:center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <form id='maintainForm' action="{{url_for('maintain')}}" method="POST" style="display:inline">
+        <select id='selPlant' name='plant'>
+            {% for plant in vm.plants %}
+            {% if plant[1] == vm.plant %}
+            <option value="{{plant[1]}}" selected='selected'>{{plant[0]}}</option>
+            {% else %}
+            <option value="{{plant[1]}}">{{plant[0]}}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <input type="button" value="ADD WO" id='btnAddWo'/>
+    </form>
+    <form action="{{ url_for('index_add_wos') }}" method="get" style="display:inline">
+        <input type="submit" value="ADD WOS" id="btnAddwos">
+    </form>
+    <form action="{{ url_for('close_all_wos') }}" method="post" style="display:inline">
+        <input type="hidden" name="hidcloseall" value="{{ vm.plant }}">
+        <input type="submit" value="全部删除" id="btnClose" name="btnclose">
+    </form>
+    <form action="{{ url_for('close_part_wos') }}" method="post" style="display:inline">
+        <input type="hidden" name="hidclosepart" value="{{ vm.plant }}">
+        <input type="submit" value="批量删除" id="closePart" name="clspart">
+        <table id='mainTable'>
+            <thead>
+            <tr>
+                <th>WO</th>
+                <th>PN</th>
+                <th>DESC</th>
+                <th>Qty</th>
+                <th>REMARK</th>
+            </tr>
+            </thead>
+            <tbody>
+            {%for wo_no in vm.wo_nos %}
+            <tr>
+                <td>{{wo_no}}</td>
+                <td>{{vm.wos[wo_no].pn}}</td>
+                <td>{{vm.wos[wo_no].desc}}</td>
+                <td>{{vm.wos[wo_no].total()}}</td>
+                <td>{{vm.wos[wo_no].remark}}</td>
+                <td><input type="checkbox" name="CheckPart" value="{{wo_no}}"></td>
+            </tr>
+            {%endfor%}
+            </tbody>
+        </table>
+    </form>
+    <!--<form action="{{ url_for('index_query') }}" method="post" style="display:inline">-->
+        <!--<input type="submit" value="查询" name="query_redis">-->
+    <!--</form>-->
+</div>
+
+<div id='dialog' title='Add WO To Dashboard'>
+    <label for='tbxPlant'>PLANT</label><br/>
+    <input type="text" value="{{vm.plant}}" readonly='readonly' id='tbxPlant'/><br/>
+    <label for='tbxWo'>WO</label>
+    <label id='labLoading' style="display: none;">Loading</label>
+    <br/>
+    <input type="text" value="" id='tbxWo'/><br/>
+    <label for='tbxPn'>PN</label><br/>
+    <input type="text" value="" readonly='readonly' id='tbxPn'/><br/>
+    <label for='tbxDesc'>DESC</label><br/>
+    <input type="text" value="" readonly='readonly' id='tbxDesc'/><br/>
+    <label for='tbxRemark'>Remark</label><br/>
+    <input type="text" value="" id='tbxRemark'/><br/>
+    <input type="button" id='btnAddDb' disabled='disabled' value="Add">
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    function BtnAddWoClick(sender){
+        $('#dialog').dialog("open");
+    }
+    function TbxWoKeyUp(sender, key){
+        var value = $('#tbxWo').val();
+        if(value.length != 12){
+            $('#btnAddDb').attr('disabled','true');
+            return
+        }
+        $.getJSON("{{url_for('api_wo_info', plant=vm.plant, wo='wwoo')}}".replace('wwoo', value),
+        function(data, textstatus, jqXHR){
+            if(data['pn'].length > 0){
+                $('#tbxPn').val(data['pn']);
+                $('#tbxDesc').val(data['desc']);
+                $('#tbxRemark').focus();
+                $('#btnAddDb').removeAttr('disabled');
+            }
+            else{
+                alert('Not Found in SFC.');
+            }
+        } );
+
+    }
+    function BtnAddDbClick(sender){
+        var plant = '{{vm.plant}}';
+        var wo = $('#tbxWo').val();
+        var remark = $('#tbxRemark').val();
+        if(wo.length != 12){
+            return
+        }
+        $('#btnAddDb').attr('disabled','true');
+        $.post("{{url_for('api_add_wo')}}",
+        {plant:plant, wo:wo, remark:remark },
+        function(data, textStatus, jqXHR){
+            if(data == '1'){
+                $('#dialog').dialog('close');
+                $('#maintainForm').submit();
+            }
+        });
+    };
+    $(function(){
+        $('#btnAddWo').click(BtnAddWoClick);
+        $('#btnAddDb').click(BtnAddDbClick);
+        $('#tbxWo').keyup(TbxWoKeyUp);
+        $('#dialog').dialog({autoOpen:false,
+            beforeClose:function(){
+                $('#btnAddDb').attr('disabled','true');
+                $('#tbxPn').val('');
+                $('#tbxDesc').val('');
+                $('#tbxWo').val('');
+                $('#tbxRemark').val('');
+            }
+        });
+        $.ajaxSetup({
+            beforeSend: function(){
+                $('#labLoading').css('display', 'inline');
+            },
+            complete: function(){
+                $('#labLoading').css('display', 'none');
+            }
+        });
+
+        $('#selPlant').change(function(event){
+            $('#maintainForm').submit();
+        });
+    });
+
+
+
+
+
+</script>
+{% endblock %}

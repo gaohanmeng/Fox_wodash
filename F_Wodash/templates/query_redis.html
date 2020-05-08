@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}query{% endblock %}
+{% block head %}
+<style type="text/css">
+    table#mainTable {
+    border-collapse:collapse;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    }
+    #mainTable th {
+    background-color:blueviolet;
+    color:white;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    text-align:center;
+    }
+    #mainTable td {
+    background-color:aliceblue;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    text-align:center;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<body>
+<div>
+    <form action="{{ url_for('query_redis') }}" method="post" style="display:inline">
+        <select id='selPlant' name='plant'>
+            {% for plant in vm.plants %}
+            {% if plant[1] == vm.plant %}
+            <option value="{{plant[1]}}" selected='selected'>{{plant[0]}}</option>
+            {% else %}
+            <option value="{{plant[1]}}">{{plant[0]}}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <label>Start Time</label><input id="tbxStartTime" name="startTime" type="text"/>
+        <label>End Time</label><input id="tbxEndTime" name="endTime" type="text"/>
+        <input type="hidden" name="hidvalue" value="{{ vm.plant }}">
+        <input type="submit" value="查询" name="query_redis">
+    </form>
+</div>
+<div>
+    <table id='mainTable'>
+        <thead>
+        <tr>
+            <th>UPDATE_TIME</th>
+            <th>WO</th>
+            <th>PN</th>
+            <th>Rev</th>
+            <th>DESC</th>
+            {% for cs in vm.c_stations %}
+            <th>{{cs[0]}}</th>
+            {% endfor %}
+            <th>Remark</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for key in keys %}
+        {% for wo_no in vm.wos %}
+        <tr>
+            <td>{{ key }}</td>
+            <td><a href="{{ url_for('detail', plant=vm.plant, wo=wo_no['wo'], station='0') }}">{{ wo_no['wo'] }}</a>
+            </td>
+            <td>{{ wo_no['pn'] }}</td>
+            <td>{{ wo_no['rev'] }}</td>
+            <td>{{ wo_no['desc'] }}</td>
+            {% for cs in vm.c_stations %}
+            {% for station in cs[1] if station in wo_no['status'] %}
+            <td>
+                <a href="{{ url_for('detail', plant=vm.plant, wo=wo_no['wo'], station=station|replace('/','G')) }}">
+                    {{ wo_no['status'][station] }}
+                </a>
+            </td>
+            {% else %}
+            <td>0</td>
+            {% endfor %}
+            {% endfor %}
+            <td>{{ wo_no['remark'] }}</td>
+        </tr>
+        {% endfor %}
+        <tr class='summary'>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+{% endblock %}
+{%block script%}
+<script type="text/javascript">
+    $(function(){
+        $('#tbxStartTime').datepicker({dateFormat: "yy/mm/dd"});
+        $('#tbxEndTime').datepicker({dateFormat: "yy/mm/dd"});
+    });
+
+    function FillTableFoot(){
+        <!--var prefixCellCount = 3;-->
+        var prefixCellCount = 5;
+        var foot = $('tr.summary');
+        var body = foot.parent().parent().children('tbody');
+        $.each(foot.children('th'), function (i, e) {
+            if (i < prefixCellCount ) { return; }
+            if (i == foot.children('th').length - 1) { return; }
+            var sum = 0;
+            $.each(body.children('tr'), function(i2, e2){
+                var index = $(e2).children('td').eq(i);
+                sum = sum + Number(index.text());
+            });
+            $(e).text(String(sum));
+        });
+    }
+    $(function(){
+        FillTableFoot();
+        $('#selPlant').change(function(event){
+            $('#indexForm').submit();
+        });
+    });
+</script>
+{%endblock%}

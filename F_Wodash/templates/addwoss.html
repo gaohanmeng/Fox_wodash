@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}ADD WOs WIP Status{% endblock %}
+
+{% block head %}
+<style type="text/css">
+    table {
+    border-collapse:collapse;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    }
+    th {
+    background-color:blueviolet;
+    color:white;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    }
+    td {
+    background-color:aliceblue;
+    border-color:lightgray;
+    border-style:solid;
+    border-width:thin;
+    }
+    /*table#id tbody tr::alternate td {
+    background-color:lightyellow;
+    }*/
+</style>
+{% endblock %}
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery-1.9.1.js') }} "></script>
+
+{% block content %}
+<div>
+    <form action="{{ url_for('download_templates') }}" method="post" style="display:inline;">
+        <input type="submit" value="Download Template" name="Download" id="btnDownTemplate">
+    </form>
+    <form name="demo" enctype="multipart/form-data" method="post" style="display:inline;">
+        <label for="plant">厂别</label>
+        <select id="plant" name="plant">
+            {% for plant in vm.plants %}
+            {% if plant[1] == vm.plant %}
+            <option value="{{plant[1]}}" selected='selected'>{{plant[0]}}</option>
+            {% else %}
+            <option value="{{plant[1]}}">{{plant[0]}}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <label for="excelFile">上傳Excel</label>
+        <input type="file" id="excelFile" name="excelFile"/>
+        <input type="button" id="check" value="查詢" onclick="CheckAction()">
+        <input type="button" value="确认上传" onclick="UploadAction()">
+    </form>
+</div>
+<div>
+    <table>
+        <tr>
+            <td>Description</td>
+            <td>PN</td>
+            <td>WO</td>
+        </tr>
+        {% for data in results %}
+        <tr>
+            <td>{{ data['DESC'] }}</td>
+            <td>{{ data['PN'] }}</td>
+            <td>{{ data['WO'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    function CheckAction(){
+        document.demo.action="{{ url_for('get_wos_status') }}";
+        document.demo.submit();
+    };
+    function UploadAction(){
+        document.demo.action="{{ url_for('wos_upload_redis') }}";
+        document.demo.submit();
+    };
+    function DownloadAction(){
+        document.demo.action="{{ url_for('download_templates') }}";
+        document.demo.submit();
+    };
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %} WO Detail {% endblock %}
+
+{% block head %}
+<style type="text/css">
+    table#mainTable {
+        border-collapse:collapse;
+        border-color:lightgray;
+        border-style:solid;
+        border-width:thin;
+    }
+    #mainTable th {
+        background-color:blueviolet;
+        color:white;
+        border-color:lightgray;
+        border-style:solid;
+        border-width:thin;
+        text-align:center;
+    }
+    #mainTable td {
+        background-color:aliceblue;
+        border-color:lightgray;
+        border-style:solid;
+        border-width:thin;
+        text-align:center;
+    }
+</style>
+{% endblock %}
+
+{%block content%}
+<div>
+    <table id='mainTable'>
+        <thead>
+            <tr>
+                <th>PLANT</th><th>WO</th><th>SN</th><th>Station</th><th>LastTime</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sn in vm.wo.units|sort %}
+            <tr>
+                <td>{{ vm.plant }}</td>
+                <td>{{ vm.wo_no }}</td>
+                <td>{{ sn }}</td>
+                <td>{{ vm.wo.units[sn][0] }}</td>
+                <td>{{ vm.wo.units[sn][1] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{%endblock%}
+
+{% block script %}
+<script type="text/javascript">
+    $(function(){
+
+    });
+</script>
+{% endblock %}
